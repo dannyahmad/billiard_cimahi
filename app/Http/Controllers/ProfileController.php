@@ -8,46 +8,92 @@ class ProfileController extends Controller
 {
     public function index()
     {
-        // Data Company Profile
-        $data = [
-            'company' => [
-                'nama' => 'PT Billiard Jaya',
-                'tagline' => 'Tempat terbaik untuk bermain & bersantai',
-                'deskripsi' => 'PT Billiard Jaya adalah perusahaan yang bergerak di bidang pembuatan, penyewaan, dan distribusi meja billiard. 
-                                Dengan pengalaman lebih dari 10 tahun, kami selalu mengutamakan kualitas, desain elegan, serta pelayanan profesional.',
-            ],
-            'layanan' => [
-                [
-                    'judul' => 'Pembuatan Meja Billiard',
-                    'deskripsi' => 'Custom desain sesuai permintaan dengan bahan berkualitas.',
-                    'image' => 'images/billiard_contoh1.png'
-                ],
-                [
-                    'judul' => 'Sewa Meja Billiard',
-                    'deskripsi' => 'Menyediakan paket penyewaan untuk event atau kebutuhan pribadi.',
-                    'image' => 'images/billiard_contoh2.png'
-                ],
-                [
-                    'judul' => 'Distribusi Peralatan',
-                    'deskripsi' => 'Menjual aksesoris dan perlengkapan billiard berkualitas.',
-                    'image' => 'images/billiard_contoh3.png'
-
-                ],
-            ],
-            'images' => [
-                    'images/billiard_contoh1.png',
-                    'images/billiard_contoh2.png',
-                    'images/billiard_contoh3.png',
-            ],
-            'kontak' => [
-                'email' => 'info@billiardjaya.com',
-                'alamat' => 'Jl. Raya Billiard No. 10, Bandung',
-                'telepon' => '+62 812-3456-7890',
-            ]
-        ];
-        
+        $sliders = Slider::all();
+        $services = Service::all();
+        $prices = Price::all();
+        $galleries = Gallery::all();
+        $contact = Contact::first();
 
         return view('profile', compact('data'));
     }
+
+    public function updateSlider(Request $request, $id)
+    {
+        $slider = Slider::findOrFail($id);
+        $slider->title = $request->title;
+        $slider->description = $request->description;
+
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('sliders', 'public');
+            $slider->image = $path;
+        }
+
+        $slider->save();
+        return back()->with('success', 'Slider berhasil diperbarui!');
+    }
+
+    public function updateLayanan(Request $request, $id)
+    {
+        $layanan = Layanan::findOrFail($id);
+
+        $layanan->name = $request->name;
+        $layanan->description = $request->description;
+
+        if ($request->hasFile('image')) {
+            $file = $request->file('image')->store('uploads/layanan', 'public');
+            $layanan->image = $file;
+        }
+
+        $layanan->save();
+
+        return redirect()->back()->with('success', 'Layanan berhasil diupdate');
+    }
+
+    public function updatePrice(Request $request, $id)
+    {
+        $price = Price::findOrFail($id);
+
+        $price->title = $request->title;
+        $price->subtitle = $request->subtitle;
+
+        if ($request->hasFile('image')) {
+            $file = $request->file('image')->store('uploads/prices', 'public');
+            $price->image = $file;
+        }
+
+        $price->save();
+
+        return redirect()->back()->with('success', 'Price berhasil diupdate');
+    }
+
+    public function updateGallery(Request $request, $id)
+    {
+        $gallery = Gallery::findOrFail($id);
+
+        $gallery->caption = $request->caption;
+
+        if ($request->hasFile('image')) {
+            $file = $request->file('image')->store('uploads/galleries', 'public');
+            $gallery->image = $file;
+        }
+
+        $gallery->save();
+
+        return redirect()->back()->with('success', 'Gallery berhasil diupdate');
+    }
+
+
+    // contoh update kontak
+    public function updateContact(Request $request)
+    {
+        $contact = Contact::first();
+        $contact->alamat = $request->alamat;
+        $contact->telepon = $request->telepon;
+        $contact->email = $request->email;
+        $contact->save();
+
+        return back()->with('success', 'Kontak berhasil diperbarui!');
+    }
+
 }
 

@@ -135,6 +135,7 @@
                 {{ request()->routeIs('admin.pakets.*') ? 'text-white bg-[#282828]' : 'hover:bg-[#282828]' }}">
                 <i class="fa-solid fa-box-open mr-3"></i> Paket
             </a>
+            
             @endif
 
             @if(auth()->user()->role == 'kasir')
