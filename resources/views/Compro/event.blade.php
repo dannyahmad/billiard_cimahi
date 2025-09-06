@@ -13,13 +13,13 @@
     100% {background-position: 0% 50%;}
   }
   /* Animasi fade-up halus */
-@keyframes fadeUp {
-    0% { opacity: 0; transform: translateY(20px); }
-    100% { opacity: 1; transform: translateY(0); }
-}
-.animate-fade-up {
-    animation: fadeUp 0.8s ease forwards;
-}
+  @keyframes fadeUp {
+      0% { opacity: 0; transform: translateY(20px); }
+      100% { opacity: 1; transform: translateY(0); }
+  }
+  .animate-fade-up {
+      animation: fadeUp 0.8s ease forwards;
+  }
 </style>
 <div class="text-white font-sans">
   <!-- Hero Section -->
@@ -40,13 +40,6 @@
          data-aos="fade-up" data-aos-delay="200">
          Ikuti berbagai event seru dan turnamen billiard dengan hadiah menarik.
       </p>
-
-      <a href="javascript:void(0)" onclick="openCreate()"
-         class="mt-6 inline-block px-6 sm:px-8 py-3 bg-gradient-to-r from-green-500 via-green-600 to-green-500 
-                text-white font-semibold rounded-xl shadow-lg transition-all duration-500 transform 
-                hover:scale-105 hover:shadow-2xl hover:from-green-600 hover:via-green-700 hover:to-green-600">
-          + Tambah Event
-      </a>
     </div>
   </section>
 
@@ -101,24 +94,8 @@
           </div>
         </div>
 
-        <!-- Tombol Aksi -->
+        <!-- Tombol Aksi (tinggal Selengkapnya aja) -->
         <div class="mt-auto flex justify-end items-center gap-3 pt-3 border-t border-gray-700 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-500">
-          <button onclick="openEdit({{ $event->id }},
-              '{{ addslashes($event->judul) }}',
-              `{{ addslashes($event->deskripsi) }}`,
-              '{{ $event->tanggal_mulai }}',
-              '{{ $event->tanggal_selesai }}',
-              '{{ addslashes($event->lokasi ?? '') }}'
-              )"
-              class="text-yellow-300 hover:text-yellow-100 text-sm font-medium transition">
-              <i class="fas fa-edit"></i>
-          </button>
-
-          <button onclick="openDelete({{ $event->id }})"
-                  class="text-red-400 hover:text-red-200 text-sm font-medium transition">
-            <i class="fas fa-trash"></i>
-          </button>
-
           <button onclick="showDetail(
               '{{ addslashes($event->judul) }}',
               `{{ addslashes($event->deskripsi) }}`,
@@ -141,7 +118,7 @@
   <section id="event-detail" class="hidden max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
   <div class="bg-gray-900 rounded-2xl shadow-lg border border-gray-700 flex flex-col md:flex-row overflow-hidden">
 
-    <!-- Gambar Event (Landscape, Responsif, Elegan) -->
+    <!-- Gambar Event -->
     <div class="w-full md:w-1/2 bg-gray-800 flex items-center justify-center overflow-hidden rounded-l-2xl">
       <img id="detail-img" src="" alt="Event Detail"
            class="w-full h-48 sm:h-64 md:h-80 lg:h-full object-cover object-center 
@@ -150,13 +127,10 @@
 
     <!-- Informasi Event -->
     <div class="w-full md:w-1/2 p-6 sm:p-8 flex flex-col gap-6">
-
-      <!-- Judul -->
       <h3 id="detail-title"
           class="text-2xl sm:text-3xl font-bold text-green-400 border-b border-green-500 pb-2">
       </h3>
 
-      <!-- Tanggal -->
       <div class="bg-gray-800 border border-gray-700 rounded-lg p-4 shadow-sm">
         <div class="flex items-center gap-3 mb-2">
           <i class="fas fa-calendar-alt text-green-400 text-xl"></i>
@@ -165,7 +139,6 @@
         <p id="detail-date" class="text-white font-medium text-base"></p>
       </div>
 
-      <!-- Lokasi -->
       <div class="bg-gray-800 border border-gray-700 rounded-lg p-4 shadow-sm">
         <div class="flex items-center gap-3 mb-2">
           <i class="fas fa-location-dot text-green-400 text-xl"></i>
@@ -174,7 +147,6 @@
         <p id="detail-location" class="text-white font-medium text-base"></p>
       </div>
 
-      <!-- Deskripsi -->
       <div class="bg-gray-800 border border-gray-700 rounded-lg p-4 shadow-sm">
         <div class="flex items-center gap-3 mb-2">
           <i class="fas fa-pen-nib text-green-400 text-xl"></i>
@@ -185,7 +157,6 @@
         </div>
       </div>
 
-      <!-- Tombol Kembali -->
       <div>
         <button onclick="backToList()"
                 class="px-6 py-2 bg-green-500 hover:bg-green-600 rounded-lg 
@@ -193,170 +164,9 @@
           ← Kembali ke Daftar
         </button>
       </div>
-
     </div>
   </div>
 </section>
-
-<!-- Modal Create -->
-<div id="createModal" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-50">
-  <div class="bg-gray-800 p-6 rounded-2xl w-full max-w-2xl relative shadow-xl max-h-screen overflow-y-auto">
-    
-    <!-- Tombol close -->
-    <button onclick="closeCreate()" 
-            class="absolute top-3 right-3 text-gray-400 hover:text-white text-2xl font-bold">
-      &times;
-    </button>
-
-    <!-- Judul Modal -->
-    <h3 class="text-2xl font-bold text-green-400 mb-6 border-b border-gray-700 pb-2">Tambah Event</h3>
-
-    <!-- Form Create Event -->
-    <form id="createForm" method="POST" action="{{ route('events.store') }}" enctype="multipart/form-data" class="space-y-4">
-      @csrf
-
-      <!-- Judul Event -->
-      <div>
-        <label class="block text-gray-300 mb-1 font-medium">Judul Event</label>
-        <input type="text" name="judul" placeholder="Masukkan judul event" 
-               class="w-full p-2 rounded-lg bg-gray-700 text-white border border-gray-600 focus:border-green-400 focus:ring focus:ring-green-300/30 outline-none" required>
-      </div>
-
-      <!-- Deskripsi -->
-      <div>
-        <label class="block text-gray-300 mb-1 font-medium">Deskripsi Event</label>
-        <textarea name="deskripsi" rows="4" placeholder="Tulis deskripsi lengkap tentang event..." 
-                  class="w-full p-2 rounded-lg bg-gray-700 text-white border border-gray-600 focus:border-green-400 focus:ring focus:ring-green-300/30 outline-none" required></textarea>
-      </div>
-
-      <!-- Tanggal mulai & selesai -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label class="block text-gray-300 mb-1 font-medium">Tanggal Mulai</label>
-          <input type="date" name="tanggal_mulai"
-                 class="w-full p-2 rounded-lg bg-gray-700 text-white border border-gray-600 focus:border-green-400 focus:ring focus:ring-green-300/30 outline-none" required>
-        </div>
-        <div>
-          <label class="block text-gray-300 mb-1 font-medium">Tanggal Selesai</label>
-          <input type="date" name="tanggal_selesai" 
-                 class="w-full p-2 rounded-lg bg-gray-700 text-white border border-gray-600 focus:border-green-400 focus:ring focus:ring-green-300/30 outline-none">
-        </div>
-      </div>
-
-      <!-- Lokasi -->
-      <div>
-        <label class="block text-gray-300 mb-1 font-medium">Lokasi Event</label>
-        <input type="text" name="lokasi" placeholder="Contoh: Jakarta Convention Center" 
-               class="w-full p-2 rounded-lg bg-gray-700 text-white border border-gray-600 focus:border-green-400 focus:ring focus:ring-green-300/30 outline-none">
-      </div>
-
-      <!-- Gambar -->
-      <div>
-        <label class="block text-gray-300 mb-1 font-medium">Upload Poster / Gambar Event</label>
-        <input type="file" name="gambar" 
-               class="w-full p-2 rounded-lg bg-gray-700 text-white border border-gray-600 focus:border-green-400 focus:ring focus:ring-green-300/30 outline-none file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-500 file:text-white hover:file:bg-green-600">
-      </div>
-
-      <!-- Tombol Submit -->
-      <div class="pt-4 sticky bottom-0 bg-gray-800 pb-2">
-        <button type="submit" 
-                class="w-full bg-green-500 hover:bg-green-600 px-4 py-3 rounded-lg text-white font-semibold transition duration-300 shadow-md">
-           Tambah Event
-        </button>
-      </div>
-    </form>
-  </div>
-</div>
-
-
-
-<div id="editModal" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-50">
-  <div class="bg-gray-800 p-6 rounded-2xl w-full max-w-2xl relative shadow-xl max-h-screen overflow-y-auto">
-    
-    <!-- Tombol close -->
-    <button onclick="closeEdit()" 
-            class="absolute top-3 right-3 text-gray-400 hover:text-white text-2xl font-bold">
-      &times;
-    </button>
-
-    <!-- Judul Modal -->
-    <h3 class="text-2xl font-bold text-yellow-400 mb-6 border-b border-gray-700 pb-2">Edit Event</h3>
-
-    <!-- Form Edit Event -->
-    <form id="editForm" action="" method="POST" enctype="multipart/form-data" class="space-y-4">
-        @csrf
-        @method('PUT')
-
-        <!-- Judul Event -->
-        <div>
-            <label class="block text-gray-300 mb-1 font-medium">Judul Event</label>
-            <input type="text" id="editJudul" name="judul" placeholder="Masukkan judul event" 
-                   class="w-full p-2 rounded-lg bg-gray-700 text-white border border-gray-600 focus:border-green-400 focus:ring focus:ring-green-300/30 outline-none" required>
-        </div>
-
-        <!-- Deskripsi Event -->
-        <div>
-            <label class="block text-gray-300 mb-1 font-medium">Deskripsi Event</label>
-            <textarea id="editDeskripsi" name="deskripsi" rows="4" placeholder="Tulis deskripsi lengkap tentang event..." 
-                      class="w-full p-2 rounded-lg bg-gray-700 text-white border border-gray-600 focus:border-green-400 focus:ring focus:ring-green-300/30 outline-none" required></textarea>
-        </div>
-
-        <!-- Tanggal mulai & selesai -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-                <label class="block text-gray-300 mb-1 font-medium">Tanggal Mulai</label>
-                <input type="date" id="editMulai" name="tanggal_mulai"
-                       class="w-full p-2 rounded-lg bg-gray-700 text-white border border-gray-600 focus:border-green-400 focus:ring focus:ring-green-300/30 outline-none" required>
-            </div>
-            <div>
-                <label class="block text-gray-300 mb-1 font-medium">Tanggal Selesai</label>
-                <input type="date" id="editSelesai" name="tanggal_selesai"
-                       class="w-full p-2 rounded-lg bg-gray-700 text-white border border-gray-600 focus:border-green-400 focus:ring focus:ring-green-300/30 outline-none">
-            </div>
-        </div>
-
-        <!-- Lokasi Event -->
-        <div>
-            <label class="block text-gray-300 mb-1 font-medium">Lokasi Event</label>
-            <input type="text" id="editLokasi" name="lokasi" placeholder="Contoh: Jakarta Convention Center" 
-                   class="w-full p-2 rounded-lg bg-gray-700 text-white border border-gray-600 focus:border-green-400 focus:ring focus:ring-green-300/30 outline-none">
-        </div>
-
-        <!-- Upload Poster / Gambar Event -->
-        <div>
-            <label class="block text-gray-300 mb-1 font-medium">Upload Poster / Gambar Event</label>
-            <input type="file" id="gambarInput" name="gambar"
-                   class="w-full p-2 rounded-lg bg-gray-700 text-white border border-gray-600 focus:border-green-400 focus:ring focus:ring-green-300/30 outline-none file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-500 file:text-white hover:file:bg-green-600">
-            
-            <img id="gambarPreview" src="" alt="Preview Gambar Event" class="mt-2 w-full h-48 object-cover rounded-lg border border-gray-600 hidden">
-        </div>
-
-        <!-- Tombol Submit -->
-        <div class="pt-4 sticky bottom-0 bg-gray-800 pb-2">
-            <button type="submit" 
-                    class="w-full bg-green-500 hover:bg-green-600 px-4 py-3 rounded-lg text-white font-semibold transition duration-300 shadow-md">
-               Update Event
-            </button>
-        </div>
-    </form>
-  </div>
-</div>
-
-
-<!-- Modal Delete -->
-<div id="deleteModal" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-50">
-  <div class="bg-gray-800 p-6 rounded-2xl w-full max-w-md text-center relative">
-    <button onclick="closeDelete()" class="absolute top-3 right-3 text-white text-xl">&times;</button>
-    <h3 class="text-2xl text-red-400 mb-4">Hapus Event</h3>
-    <p class="text-gray-300 mb-6">Yakin ingin menghapus event ini?</p>
-    <form id="deleteForm" method="POST">
-      @csrf
-      @method('DELETE')
-      <button type="submit" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded text-white font-semibold">Hapus</button>
-      <button type="button" onclick="closeDelete()" class="bg-gray-500 hover:bg-gray-600 px-4 py-2 rounded text-white font-semibold ml-2">Batal</button>
-    </form>
-  </div>
-</div>
 
 <script>
   function openCreate() { document.getElementById('createModal').classList.remove('hidden'); }

@@ -1,28 +1,65 @@
 <?php
 
 namespace App\Http\Controllers;
-
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 use App\Models\Slider;
 use App\Models\Layanan;
 use App\Models\Price;
 use App\Models\Gallery;
 use App\Models\Contact;
+use App\Models\Event;
+use App\Models\Pelayanan;
+
 
 class ProfilController extends Controller
 {
-        public function index()
+    public function index()
     {
+        // Data tabel
         $sliders = Slider::all();
         $layanan = Layanan::all();
         $prices = Price::all();
         $galleries = Gallery::all();
         $contact = Contact::first();
 
-                        // dd($galleries);
+        // Data About dari JSON
+        $path = 'about.json';
+        if (Storage::exists($path)) {
+            $data = json_decode(Storage::get($path), true);
+        } else {
+            $data = ['gambar' => '', 'deskripsi' => ''];
+        }
 
-        return view('compro.home', compact('sliders','layanan','prices','galleries','contact'));
+        // Kirim semua data ke view
+        return view('compro.home', compact(
+            'sliders', 'layanan', 'prices', 'galleries', 'contact', 'data'
+        ));
     }
+
+    public function edit()
+    {
+        // Data tabel
+        $sliders = Slider::all();
+        $layanan = Layanan::all();
+        $prices = Price::all();
+        $galleries = Gallery::all();
+        $contact = Contact::first();
+
+        // Data About dari JSON
+        $path = 'about.json';
+        if (Storage::exists($path)) {
+            $data = json_decode(Storage::get($path), true);
+        } else {
+            $data = ['gambar' => '', 'deskripsi' => ''];
+        }
+
+        // Kirim semua data ke view
+        return view('admin.compros.edit', compact(
+            'sliders', 'layanan', 'prices', 'galleries', 'contact', 'data'
+        ));
+    }
+
 
     public function storeSlider(Request $request)
     {
@@ -228,4 +265,188 @@ class ProfilController extends Controller
 
         return back()->with('success', 'Kontak berhasil diperbarui!');
     }
-}
+    public function save(Request $request)
+    {
+        $request->validate([
+            'deskripsi' => 'required|string|max:5000',
+            'gambar' => 'nullable|image|mimes:jpg,jpeg,png|max:2048'
+        ]);
+
+        $path = 'about.json';
+
+        // Ambil data lama
+        $data = ['gambar' => '', 'deskripsi' => ''];
+        if (Storage::exists($path)) {
+            $data = json_decode(Storage::get($path), true);
+        }
+
+        // Update deskripsi
+        $data['deskripsi'] = $request->deskripsi;
+
+        // Upload gambar baru jika ada
+        if ($request->hasFile('gambar')) {
+            $file = $request->file('gambar');
+            $filename = time() . '.' . $file->getClientOriginalExtension();
+            $file->storeAs('public/tentang', $filename);
+            $data['gambar'] = 'storage/tentang/' . $filename;
+        }
+
+        // Simpan JSON
+        Storage::put($path, json_encode($data, JSON_PRETTY_PRINT));
+
+        return redirect()->back()->with('success', 'Tentang Kami berhasil disimpan!');
+    }
+
+    public function events()
+    {
+        $events = Event::latest()->get();
+
+        // Halaman public (tanpa tombol admin)
+        return view('compro.event', compact('events'));
+    }
+
+    public function manageEvents()
+    {
+        $events = Event::latest()->get();
+
+        // Halaman admin (ada tombol tambah/edit/hapus)
+        return view('admin.compros.editevent', compact('events'));
+    }
+
+    public function storeEvent(Request $request)
+        {
+            $request->validate([
+                'judul' => 'required',
+                'deskripsi' => 'required',
+                'tanggal_mulai' => 'required|date',
+                'tanggal_selesai' => 'nullable|date|after_or_equal:tanggal_mulai',
+                'lokasi' => 'nullable|string',
+                'gambar' => 'nullable|image|max:2048'
+            ]);
+
+            $data = $request->except('_token');
+
+            if ($request->hasFile('gambar')) {
+                $data['gambar'] = $request->file('gambar')->store('events', 'public');
+            }
+
+            Event::create($data);
+
+            return back()->with('success', 'Event berhasil ditambahkan');
+        }
+
+        public function updateEvent(Request $request, Event $event)
+        {
+            $request->validate([
+                'judul' => 'required',
+                'deskripsi' => 'required',
+                'tanggal_mulai' => 'required|date',
+                'tanggal_selesai' => 'nullable|date|after_or_equal:tanggal_mulai',
+                'lokasi' => 'nullable|string',
+                'gambar' => 'nullable|image|max:2048'
+            ]);
+
+            $data = $request->only(['judul','deskripsi','tanggal_mulai','tanggal_selesai','lokasi']);
+
+            if ($request->hasFile('gambar')) {
+                // hapus gambar lama
+                if($event->gambar && \Storage::disk('public')->exists($event->gambar)){
+                    \Storage::disk('public')->delete($event->gambar);
+                }
+
+                // simpan gambar baru
+                $data['gambar'] = $request->file('gambar')->store('events', 'public');
+            }
+
+            $event->update($data);
+
+            return back()->with('success', 'Event berhasil diupdate');
+        }
+
+
+        public function destroyEvent(Event $event)
+        {
+            $event->delete();
+            return back()->with('success', 'Event berhasil dihapus');
+        }
+
+
+    public function pelayanan()
+    {
+        $makanan = Pelayanan::where('kategori', 'Makanan')->get();
+        $minuman = Pelayanan::where('kategori', 'Minuman')->get();
+        $rokok   = Pelayanan::where('kategori', 'Rokok')->get();
+
+        $pelayanans = Pelayanan::all();
+
+        return view('compro.pelayanan', compact('makanan', 'minuman', 'rokok', 'pelayanans'));
+    }
+
+    public function managePelayanan()
+    {
+        $makanan = Pelayanan::where('kategori', 'Makanan')->get();
+        $minuman = Pelayanan::where('kategori', 'Minuman')->get();
+        $rokok   = Pelayanan::where('kategori', 'Rokok')->get();
+
+        $pelayanans = Pelayanan::all();
+
+        return view('admin.compros.editpelayanan', compact('makanan', 'minuman', 'rokok', 'pelayanans'));
+    }
+
+    public function storePelayanan(Request $request)
+    {
+        $request->validate([
+            'nama'     => 'required|string|max:255',
+            'kategori' => 'required|in:Makanan,Minuman,Rokok',
+            'harga'    => 'required|numeric',
+            'gambar'   => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+        ]);
+
+        $data = $request->only('nama','kategori','harga');
+
+        if ($request->hasFile('gambar')) {
+            $data['gambar'] = $request->file('gambar')->store('pelayanan', 'public');
+        }
+
+        Pelayanan::create($data);
+
+        return back()->with('success', $request->kategori.' berhasil ditambahkan');
+    }
+
+    public function updatePelayanan(Request $request, Pelayanan $pelayanan)
+    {
+        $request->validate([
+            'nama'     => 'required|string|max:255',
+            'kategori' => 'required|in:Makanan,Minuman,Rokok',
+            'harga'    => 'required|numeric',
+            'gambar'   => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+        ]);
+
+        $data = $request->only('nama','kategori','harga');
+
+        if ($request->hasFile('gambar')) {
+            if ($pelayanan->gambar && Storage::disk('public')->exists($pelayanan->gambar)) {
+                Storage::disk('public')->delete($pelayanan->gambar);
+            }
+            $data['gambar'] = $request->file('gambar')->store('pelayanan', 'public');
+        }
+
+        $pelayanan->update($data);
+
+        return back()->with('success', $request->kategori.' berhasil diperbarui');
+    }
+
+    public function destroyPelayanan(Pelayanan $pelayanan)
+    {
+        $kategori = $pelayanan->kategori;
+
+        if ($pelayanan->gambar && Storage::disk('public')->exists($pelayanan->gambar)) {
+            Storage::disk('public')->delete($pelayanan->gambar);
+        }
+
+        $pelayanan->delete();
+
+        return back()->with('success', $kategori.' berhasil dihapus');
+    }
+
+    }

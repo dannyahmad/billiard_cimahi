@@ -135,6 +135,10 @@
                 {{ request()->routeIs('admin.pakets.*') ? 'text-white bg-[#282828]' : 'hover:bg-[#282828]' }}">
                 <i class="fa-solid fa-box-open mr-3"></i> Paket
             </a>
+            <a href="{{ route('admin.compros.edit') }}" class="flex items-center px-4 py-2 rounded
+                {{ request()->routeIs('admin.compro.*') ? 'text-white bg-[#282828]' : 'hover:bg-[#282828]' }}">
+                <i class="fa-solid fa-building mr-3"></i> Edit Compro
+            </a>
             
             @endif
 
