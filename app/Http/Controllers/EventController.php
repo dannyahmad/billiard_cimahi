@@ -14,6 +14,8 @@ class EventController extends Controller
 
     public function store(Request $request)
     {
+            // dd($request->all()); // berhenti dan tampilkan semua data form
+
         $request->validate([
             'judul' => 'required',
             'deskripsi' => 'required',
