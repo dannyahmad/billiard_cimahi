@@ -17,5 +17,4 @@ class Pelayanan extends Model
     'harga', 
     'gambar'
 ];
-
 }

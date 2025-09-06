@@ -1,11 +1,13 @@
 @extends('default')
 
-@section('title', 'Dashboard Pemandu')
+@section('title', 'Dashboard Kasir')
 
 @section('content')
 
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
 <div class="container mx-auto p-4">
-    <h1 class="text-2xl font-bold mb-4 text-black">Dashboard Pemandu</h1>
+    <h1 class="text-2xl font-bold mb-4 text-black">Dashboard Kasir</h1>
 
     <div id="meja-container"
         class="grid grid-cols-1 sm:grid-cols-2 [@media(min-width:768px)_and_(max-width:870px)]:grid-cols-2
@@ -44,6 +46,7 @@
         <form id="formPesan" method="POST">
             @csrf
             <input type="hidden" name="meja_id" id="modal_meja_id">
+
             <div class="mb-3">
                 <label for="kode_member" class="block text-sm font-medium text-gray-700">Kode Member (Opsional)</label>
                 <div class="flex">
@@ -56,24 +59,6 @@
                 <p id="member_info_preview" class="text-sm text-green-600 mt-1 italic" style="display:none;"></p>
             </div>
 
-            <!-- Checkbox Member -->
-            <div class="mb-3">
-                <label class="inline-flex items-center">
-                    <input type="checkbox" id="is_member" name="is_member" class="form-checkbox h-5 w-5 text-blue-600">
-                    <span class="ml-2 text-gray-700">Member</span>
-                </label>
-            </div>
-
-            <!-- No. Telp (hanya muncul kalau member dicentang) -->
-            <div class="mb-3" id="no_telp_wrapper" style="display:none;">
-                <label for="no_telp" class="form-label">No. Telepon</label>
-                <input type="text" name="no_telp" id="no_telp" class="form-input" placeholder="Masukkan nomor telepon">
-                <p id="diskon_info" class="text-green-600 text-sm mt-1" style="display:none;">
-                    Anda mendapatkan potongan 5%!
-                </p>
-            </div>
-
-            <!-- Pilih Paket -->
             <div class="mb-3">
                 <label for="nama_penyewa" class="block text-sm font-medium text-gray-700">Nama Penyewa <span class="text-red-500">*</span></label>
                 <input type="text" name="nama_penyewa" id="nama_penyewa" required
@@ -88,6 +73,7 @@
                 </select>
                 <p id="paket_deskripsi_preview" class="text-sm text-gray-500 mt-1 italic" style="display:none;"></p>
             </div>
+
             <div id="non_paket_options" class="space-y-3">
                 <div class="flex items-center">
                     <input type="checkbox" id="is_sepuasnya" name="is_sepuasnya"
@@ -100,6 +86,7 @@
                         class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2">
                 </div>
             </div>
+
             <div class="flex justify-end mt-4 space-x-2">
                 <button type="button" onclick="closeModal()"
                     class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">Batal</button>
@@ -160,17 +147,81 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+{{-- Modal Pembayaran --}}
+<div id="paymentModal" style="display:none" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+     <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto text-black">
+        <h2 class="text-xl font-bold mb-4">Detail Pembayaran</h2>
+        <form id="formPembayaran">
+            @csrf
+            <input type="hidden" name="penyewaan_id" id="payment_penyewaan_id">
+            <p class="mb-1">Meja: <strong id="payment_meja_nama"></strong></p>
+            <p class="mb-1">Penyewa: <strong id="payment_nama_penyewa"></strong></p>
+            <p id="payment_member_info" class="mb-1 text-sm text-green-600" style="display: none;"></p>
+            <p class="mb-1">Durasi Booking: <strong id="payment_durasi"></strong></p>
+            <p id="payment_mode_sepuasnya_info" style="display: none;" class="text-sm text-gray-500 italic">(Mode Main Sepuasnya)</p>
+            <p class="mb-1">Waktu Mulai: <strong id="payment_waktu_mulai"></strong></p>
+            <p class="mb-1">Waktu Selesai (Terjadwal): <strong id="payment_waktu_selesai_terjadwal"></strong></p>
+            <p class="mb-1">Waktu Selesai (Aktual): <strong id="payment_waktu_selesai_aktual"></strong></p>
+            <p class="mb-1">Harga Per Jam: <strong id="payment_harga_per_jam"></strong></p>
+            <p class="mb-1">Subtotal Main: <strong id="payment_subtotal_main"></strong></p>
+            <p class="mb-1">Total Service: <strong id="payment_total_service"></strong></p>
+            <ul id="payment_service_detail" class="list-disc list-inside text-sm text-gray-600 mb-2 pl-5"></ul>
+
+            <div class="mb-3 mt-4">
+                <label for="kode_kupon" class="block text-sm font-medium text-gray-700">Kode Kupon (Opsional)</label>
+                <input type="text" name="kode_kupon" id="kode_kupon"
+                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2">
+                <small class="text-gray-500">Biarkan kosong jika tidak ada kupon.</small>
+            </div>
+            <p class="text-lg font-bold mb-1">Diskon Member: <strong id="payment_diskon_member" class="text-red-500"></strong></p>
+            <p class="text-lg font-bold mb-1">Diskon Kupon: <strong id="payment_diskon_kupon" class="text-red-500"></strong></p>
+            <p class="text-xl font-bold mt-2">Total Pembayaran: <strong id="payment_total_final" class="text-blue-600"></strong></p>
+
+            <div class="flex justify-end mt-4 space-x-2">
+                <button type="button" onclick="closePaymentModal()"
+                    class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">Batal</button>
+                <button type="submit"
+                    class="px-4 py-2 bg-blue-600 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">Bayar Sekarang</button>
+                <button type="button" id="btn-pay-qris" onclick="handleQrisPayment()"
+                    class="px-4 py-2 bg-neutral-600 text-white rounded-md hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500">Bayar dengan QRIS</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+@if(session('error'))
+<script>
+    Swal.fire({
+        icon: 'error',
+        title: 'Oops...',
+        text: "{{ session('error') }}",
+        confirmButtonText: 'OK'
+    });
+</script>
+@endif
+
+@if(session('success'))
+<script>
+    Swal.fire({
+        icon: 'success',
+        title: 'Berhasil!',
+        text: "{{ session('success') }}",
+        confirmButtonText: 'OK'
+    });
+</script>
+@endif
 <script>
     const serverTime = new Date("{{ $serverTime }}");
     const clientTimeAtLoad = new Date();
     const serverClientOffset = serverTime.getTime() - clientTimeAtLoad.getTime();
+    const userRole = "{{ $userRole }}";
 
     const getCalibratedNow = () => new Date(new Date().getTime() + serverClientOffset);
     const countdownIntervals = {};
     let currentActiveRentals = {};
     let allAvailableServices = [];
-    let allAvailablePakets = @json($activePakets);
+    let allAvailablePakets = @json($activePakets); // Load all packages from server
     let memberData = { valid: false, nama_member: '', diskon_persen: 0 }; // Global member data
 
     const getEl = (id) => document.getElementById(id);
@@ -197,9 +248,7 @@
         getEl('kode_member').value = '';
         getEl('nama_penyewa').value = '';
         getEl('member_info_preview').style.display = 'none';
-        getEl('member_info_preview').classList.remove('text-red-600');
-        getEl('member_info_preview').classList.add('text-green-600');
-        memberData = { valid: false, nama_member: '', diskon_persen: 0 }; // Reset global member data
+        memberData = { valid: false, nama_member: '', diskon_persen: 0 }; // Reset member data
         
         getEl('paket_id_select').value = '';
         getEl('paket_deskripsi_preview').style.display = 'none';
@@ -210,9 +259,9 @@
         getEl('durasi_jam_wrapper').style.display = 'block';
         getEl('durasi_jam').required = true;
         
-        getEl('formPesan').action = '{{ route('pemandu.pesanDurasi') }}';
+        getEl('formPesan').action = '{{ route('kasir.pesanDurasi') }}';
 
-        populatePaketsDropdown(false); // Initial populate, show all packages (because memberData.valid is false)
+        populatePaketsDropdown(); // Populate all packages initially
         toggleModal('pesanModal', true);
     };
     const closeModal = () => toggleModal('pesanModal', false);
@@ -228,6 +277,12 @@
         toggleModal('addServiceModal', true);
     };
     const closeAddServiceModal = () => toggleModal('addServiceModal', false);
+    const openPaymentModal = (penyewaanId) => {
+        if (getEl('paymentModal').style.display === 'flex') return;
+        getEl('payment_penyewaan_id').value = penyewaanId; getEl('kode_kupon').value = '';
+        fetchPaymentDetails(penyewaanId); toggleModal('paymentModal', true);
+    };
+    const closePaymentModal = () => toggleModal('paymentModal', false);
 
     const startCountdown = (el, waktuSelesaiStr, penyewaanData) => {
         const waktuSelesai = new Date(waktuSelesaiStr); const pId = penyewaanData.id;
@@ -249,31 +304,10 @@
     };
 
     const handleTimeUpUI = (penyewaanData) => {
-        const mejaId = penyewaanData.meja_id;
-        const mejaCardEl = getEl(`meja-card-${mejaId}`); // Ambil elemen card meja
-        const statusMejaEl = mejaCardEl.querySelector(`#status-meja-${mejaId}`); // Ambil elemen status di card
-        const actionsCont = document.querySelector(`#penyewaan-${mejaId} .flex-wrap`);
-
-        // Perbarui status meja di UI
-        if (statusMejaEl) {
-            statusMejaEl.innerText = 'Status: waktu_habis';
-        }
-        // Perbarui class bg card (opsional, sesuaikan warna jika perlu)
-        if (mejaCardEl) {
-            mejaCardEl.classList.remove('bg-green-100', 'bg-neutral-600', 'bg-blue-100'); // Hapus semua background sebelumnya
-            // Kasir -> merah untuk waktu_habis
-            // Pemandu -> merah untuk waktu_habis
-            mejaCardEl.classList.add('bg-red-200'); // Atau warna lain yang Anda inginkan untuk 'waktu_habis'
-        }
-
+        const mejaId = penyewaanData.meja_id; const actionsCont = document.querySelector(`#penyewaan-${mejaId} .flex-wrap`);
         if (actionsCont) {
-            // Konten aksi disesuaikan, misalnya hanya tombol service dan status pembayaran
             actionsCont.innerHTML = `
                 @if(Auth::check() && Auth::user()->role == 'admin')
-                <button type="button" class="px-3 py-1 bg-red-200 hover:bg-red-300 text-red-900 rounded-md text-xs" onclick="event.preventDefault(); confirmDeletePenyewaan(${penyewaanData.id}, '${penyewaanData.meja_nama}');">
-                    <i class="fa-solid fa-trash"></i> Hapus
-                </button>
-                @elseif(Auth::check() && Auth::user()->role == 'supervisor')
                 <button type="button" class="px-3 py-1 bg-red-200 hover:bg-red-300 text-red-900 rounded-md text-xs" onclick="event.preventDefault(); confirmDeletePenyewaan(${penyewaanData.id}, '${penyewaanData.meja_nama}');">
                     <i class="fa-solid fa-trash"></i> Hapus
                 </button>
@@ -281,49 +315,12 @@
                 <button type="button" class="px-3 py-1 bg-yellow-200 hover:bg-yellow-300 text-yellow-900 rounded-md text-xs" onclick="event.preventDefault(); openAddServiceModal(${penyewaanData.id});">
                     <i class="fa-solid fa-wine-bottle"></i> Tambah Service
                 </button>
-                <span class="px-3 py-1 bg-red-100 text-red-700 rounded-md text-xs">Waktu Habis! Menunggu Pembayaran.</span>
-                @if(Request::is('kasir*')) {{-- Hanya tampil di dashboard kasir --}}
                 <button type="button" class="px-3 py-1 bg-green-500 text-white rounded-md text-xs hover:bg-green-600" onclick="event.preventDefault(); openPaymentModal(${penyewaanData.id});">
                     <i class="fa-solid fa-cash-register"></i> Bayar Sekarang
                 </button>
-                @endif
             `;
         }
-
-        // Opsional: Kirim permintaan ke server untuk memperbarui status di database.
-        // Ini memastikan status 'waktu_habis' persisten meskipun halaman di-refresh.
-        // Namun, jika Anda ingin status ini hanya di frontend sampai pembayaran, Anda bisa lewati ini.
-        // Jika perlu, tambahkan rute dan metode controller baru untuk ini.
-        updateMejaStatusOnServer(mejaId, 'waktu_habis');
-
-        // Jika di Kasir, langsung buka modal pembayaran
-        @if(Request::is('kasir*'))
-            openPaymentModal(penyewaanData.id);
-        @endif
-    };
-
-    // Fungsi baru untuk memperbarui status meja di server (opsional, tapi disarankan)
-    const updateMejaStatusOnServer = async (mejaId, newStatus) => {
-        try {
-            // Anda perlu membuat rute dan metode controller baru untuk ini,
-            // misalnya: POST /api/mejas/{meja}/update-status
-            const res = await fetch(`/api/mejas/${mejaId}/update-status`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
-                body: JSON.stringify({ status: newStatus })
-            });
-            const data = await res.json();
-            if (!res.ok) {
-                console.error('Gagal memperbarui status meja di server:', data.message);
-                Swal.fire('Error', 'Gagal memperbarui status meja di server: ' + (data.message || 'Terjadi kesalahan.'), 'error');
-            }
-        } catch (error) {
-            console.error('Error updating meja status on server:', error);
-            Swal.fire('Error', 'Terjadi kesalahan jaringan saat memperbarui status meja.', 'error');
-        }
+        openPaymentModal(penyewaanData.id);
     };
 
     const toggleServiceDropdown = (penyewaanId) => {
@@ -346,11 +343,11 @@
         }).then(async (result) => {
             if (result.isConfirmed) {
                 try {
-                    const res = await fetch(`{{ url('/pemandu/penyewaan/') }}/${penyewaanId}/remove-service`, {
+                    const res = await fetch(`{{ url('/kasir/penyewaan/') }}/${penyewaanId}/remove-service`, {
                         method: 'DELETE', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' }, body: JSON.stringify({ service_id: serviceId })
                     });
                     const data = await res.json();
-                    if (data.success) { Swal.fire('Berhasil!', data.message, 'success'); fetchAndRenderMejas(); }
+                    if (res.ok) { Swal.fire('Berhasil!', data.message, 'success'); fetchAndRenderMejas(); }
                     else { Swal.fire('Gagal!', data.message || 'Terjadi kesalahan.', 'error'); }
                 } catch (error) { console.error('Error removing service:', error); Swal.fire('Error!', 'Terjadi kesalahan jaringan atau server saat menghapus service.', 'error'); }
             }
@@ -359,7 +356,7 @@
 
     const fetchAndRenderMejas = async () => {
         try {
-            const res = await fetch('{{ route('pemandu.api.penyewaanAktif') }}');
+            const res = await fetch('{{ route('kasir.api.penyewaanAktif') }}');
             const activeRentals = await res.json();
             currentActiveRentals = {}; activeRentals.forEach(p => currentActiveRentals[p.id] = p);
 
@@ -384,21 +381,37 @@
                     else if (isTimeUp) timerDisplay = `⏳ Waktu habis!`;
 
                     let actionButtonsHtml = '';
+                    let deleteButtonHtml = '';
+
+                    @if(Auth::check() && Auth::user()->role == 'admin')
+                    deleteButtonHtml = `
+                        <button type="button" class="px-3 py-1 bg-red-200 hover:bg-red-300 text-red-900 rounded-md text-xs" onclick="event.preventDefault(); confirmDeletePenyewaan(${penyewaanForThisMeja.id}, '${penyewaanForThisMeja.meja_nama}');">
+                            <i class="fa-solid fa-trash"></i> Hapus
+                        </button>
+                    `;
+                    @endif
 
                     if (isSepuasnya || isTimeUp) {
                         actionButtonsHtml = `
+                            ${deleteButtonHtml}
                             <button type="button" class="px-3 py-1 bg-yellow-200 hover:bg-yellow-300 text-yellow-900 rounded-md text-xs" onclick="event.preventDefault(); openAddServiceModal(${penyewaanForThisMeja.id});">
                                 <i class="fa-solid fa-wine-bottle"></i> Tambah Service
                             </button>
-                            <span class="px-3 py-1 bg-red-100 text-red-700 rounded-md text-xs">Waktu Habis! Menunggu Pembayaran. (abaikan jika sepuasnya)</span>
+                            <button type="button" class="px-3 py-1 bg-green-500 text-white rounded-md text-xs hover:bg-green-600" onclick="event.preventDefault(); openPaymentModal(${penyewaanForThisMeja.id});">
+                                <i class="fa-solid fa-cash-register"></i> Bayar Sekarang
+                            </button>
                         `;
                     } else {
                         actionButtonsHtml = `
+                            ${deleteButtonHtml}
                             <button type="button" class="px-3 py-1 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md text-xs" onclick="event.preventDefault(); openAddDurationModal(${penyewaanForThisMeja.id});">
                                 <i class="fa-solid fa-stopwatch"></i> Tambah Waktu
                             </button>
                             <button type="button" class="px-3 py-1 bg-yellow-200 hover:bg-yellow-300 text-yellow-900 rounded-md text-xs" onclick="event.preventDefault(); openAddServiceModal(${penyewaanForThisMeja.id});">
                                 <i class="fa-solid fa-wine-bottle"></i> Tambah Service
+                            </button>
+                            <button type="button" class="px-3 py-1 bg-green-500 text-white rounded-md text-xs hover:bg-green-600" onclick="event.preventDefault(); openPaymentModal(${penyewaanForThisMeja.id});">
+                                <i class="fa-solid fa-cash-register"></i> Bayar
                             </button>
                         `;
                     }
@@ -439,21 +452,19 @@
                         memberInfoHtml = `<p class="text-sm font-medium text-blue-700">Member: ${penyewaanForThisMeja.member_nama} (${penyewaanForThisMeja.member_kode})</p>`;
                     }
 
-
                     if (penyewaanDivEl) {
                         penyewaanDivEl.innerHTML = `
-                            <div class="mt-3 bg-white rounded-lg shadow-sm p-3 border border-blue-300">
+                            <div class="mt-3 bg-white rounded-lg shadow-sm p-3 border border-red-300">
                                 <div class="flex items-center justify-between">
                                     <div>
                                         <p class="text-sm font-semibold text-gray-700"><i class="fa-solid fa-user"></i> ${penyewaanForThisMeja.nama_penyewa}</p>
                                         ${memberInfoHtml}
                                         <p class="text-xs text-gray-500"><i class="fa-solid fa-clock"></i> Mulai: ${fmtTime(penyewaanForThisMeja.waktu_mulai)} WIB</p>
                                         <p class="text-xs text-gray-500"><i class="fa-solid fa-hourglass-half"></i> Durasi: ${isSepuasnya ? 'Main Sepuasnya' : fmtDur(penyewaanForThisMeja.durasi_jam)}</p>
-                                        <p class="text-xs text-gray-500"><i class="fa-solid fa-person-chalkboard"></i> Pemandu: ${penyewaanForThisMeja.pemandu_nama}</p>
                                     </div>
                                     <div class="text-right">
-                                        <span class="inline-block bg-blue-100 text-blue-700 text-xs font-semibold px-2 py-1 rounded-full">DIPAKAI</span>
-                                        <p class="text-sm font-bold text-blue-700 mt-1">${timerDisplay}</p>
+                                        <span class="inline-block bg-red-100 text-red-700 text-xs font-semibold px-2 py-1 rounded-full">DIPAKAI</span>
+                                        <p class="text-sm font-bold text-red-700 mt-1">${timerDisplay}</p>
                                     </div>
                                 </div>
                                 ${serviceDetailHtml}
@@ -484,6 +495,75 @@
                 }
             });
         } catch (error) { console.error('Error fetching and rendering mejas:', error); }
+    };
+
+    const fetchPaymentDetails = async (penyewaanId) => {
+        const p = currentActiveRentals[penyewaanId]; if (!p) { Swal.fire('Error', 'Detail penyewaan tidak ditemukan.', 'error'); closePaymentModal(); return; }
+
+        const hargaPerJam = parseFloat(p.harga_per_jam || 0);
+        let durasiUntukPerhitungan = parseFloat(p.durasi_jam || 0);
+        const initialTotalService = parseFloat(p.total_service || 0);
+        const serviceDetails = p.service_detail;
+        const diskonMemberPersen = parseFloat(p.diskon_member_persen || 0);
+
+        let waktuSelesaiAktual = getCalibratedNow();
+        if (p.is_sepuasnya) { durasiUntukPerhitungan = (waktuSelesaiAktual.getTime() - new Date(p.waktu_mulai).getTime()) / (1000 * 60 * 60); }
+
+        const updateTotalDisplay = (diskonPersenKupon = 0) => {
+            const subtotalMain = durasiUntukPerhitungan * hargaPerJam;
+            const totalBeforeAllDiscounts = subtotalMain + initialTotalService;
+
+            const totalDiskonGabunganPersen = diskonMemberPersen + diskonPersenKupon;
+            const finalDiskonPersen = Math.min(totalDiskonGabunganPersen, 100);
+
+            const totalDiskonAmount = (totalBeforeAllDiscounts * finalDiskonPersen) / 100;
+            const finalTotal = totalBeforeAllDiscounts - totalDiskonAmount;
+
+            // Diskon member ditampilkan terpisah
+            const diskonMemberAmount = (totalBeforeAllDiscounts * diskonMemberPersen) / 100;
+            const diskonKuponAmount = (totalBeforeAllDiscounts * diskonPersenKupon) / 100; // Ini adalah diskon kupon yang 'seharusnya' tanpa batasan 100%
+
+            getEl('payment_subtotal_main').innerText = fmtRp(subtotalMain);
+            getEl('payment_total_service').innerText = fmtRp(initialTotalService);
+            getEl('payment_diskon_member').innerText = `${fmtRp(diskonMemberAmount)} (${diskonMemberPersen}%)`;
+            getEl('payment_diskon_kupon').innerText = `${fmtRp(diskonKuponAmount)} (${diskonPersenKupon}%)`;
+            getEl('payment_total_final').innerText = fmtRp(finalTotal);
+        };
+
+        getEl('payment_meja_nama').innerText = p.meja_nama;
+        getEl('payment_nama_penyewa').innerText = p.nama_penyewa;
+
+        if (p.member_id) {
+            getEl('payment_member_info').innerText = `Member: ${p.member_nama} (${p.member_kode})`;
+            getEl('payment_member_info').style.display = 'block';
+        } else {
+            getEl('payment_member_info').style.display = 'none';
+        }
+
+        getEl('payment_durasi').innerText = p.is_sepuasnya ? 'N/A (Main Sepuasnya)' : fmtDur(p.durasi_jam);
+        getEl('payment_mode_sepuasnya_info').style.display = p.is_sepuasnya ? 'block' : 'none';
+        getEl('payment_waktu_mulai').innerText = fmtFullDt(p.waktu_mulai);
+        getEl('payment_waktu_selesai_terjadwal').innerText = p.waktu_selesai ? fmtFullDt(p.waktu_selesai) : 'N/A';
+        getEl('payment_waktu_selesai_aktual').innerText = fmtFullDt(waktuSelesaiAktual);
+        getEl('payment_harga_per_jam').innerText = fmtRp(hargaPerJam);
+
+        const serviceDetailListEl = getEl('payment_service_detail'); serviceDetailListEl.innerHTML = '';
+        if (serviceDetails && serviceDetails.length > 0) {
+            serviceDetails.forEach(s => { const li = document.createElement('li'); li.innerText = `${s.nama} (${s.jumlah}x) - ${fmtRp(s.subtotal)}`; serviceDetailListEl.appendChild(li); });
+        } else { const li = document.createElement('li'); li.innerText = 'Tidak ada layanan tambahan.'; serviceDetailListEl.appendChild(li); }
+        updateTotalDisplay();
+
+        getEl('kode_kupon').oninput = debounce(async function() {
+            const kuponCode = this.value.trim(); let diskonPersen = 0;
+            if (kuponCode) {
+                try {
+                    const res = await fetch(`{{ route('api.kupon.validate') }}?code=${encodeURIComponent(kuponCode)}`);
+                    if (res.ok) { const data = await res.json(); diskonPersen = parseFloat(data.diskon_persen) || 0; Swal.fire('Berhasil!', `Kupon "${kuponCode}" berhasil diterapkan! Diskon ${diskonPersen}%`, 'success'); }
+                    else { const errData = await res.json(); Swal.fire('Error', 'Kupon tidak valid: ' + (errData.message || 'Kode kupon tidak ditemukan atau kadaluarsa.'), 'error'); }
+                } catch (e) { Swal.fire('Error', 'Terjadi kesalahan jaringan atau server saat memvalidasi kupon.','error'); console.error('Error validating kupon:', e); }
+            }
+            updateTotalDisplay(diskonPersen);
+        }, 500);
     };
 
     const fetchAndRenderServicesForAdd = async () => {
@@ -522,22 +602,23 @@
         } catch (error) { Swal.fire('Error', 'Gagal memuat daftar service.', 'error'); console.error('Error fetching services:', error); }
     };
 
-    const populatePaketsDropdown = (isMemberValid = false) => { // Perubahan parameter
+    const populatePaketsDropdown = (isMember = false) => {
         const paketSelect = getEl('paket_id_select');
         paketSelect.innerHTML = '<option value="">-- Pilih Paket --</option>';
 
         allAvailablePakets.forEach(paket => {
             const isMemberPaket = paket.nama_paket.toLowerCase().startsWith('member');
-            
-            // Logika baru:
-            // Jika member valid (isMemberValid = true), tampilkan semua paket.
-            // Jika bukan member valid (isMemberValid = false), hanya tampilkan paket yang BUKAN 'member'.
-            if (isMemberValid || (!isMemberValid && !isMemberPaket)) {
-                const option = document.createElement('option');
-                option.value = paket.id;
-                option.innerText = paket.nama_paket;
-                paketSelect.appendChild(option);
+
+            // Jika bukan member, jangan tampilkan paket member
+            if (!isMember && isMemberPaket) {
+                return;
             }
+
+            // Jika member, semua paket tampil
+            const option = document.createElement('option');
+            option.value = paket.id;
+            option.innerText = paket.nama_paket;
+            paketSelect.appendChild(option);
         });
     };
 
@@ -546,31 +627,44 @@
         const memberInfoPreview = getEl('member_info_preview');
         const namaPenyewaInput = getEl('nama_penyewa');
         
-        memberData = { valid: false, nama_member: '', diskon_persen: 0 }; // Reset global member data
+        memberData = { valid: false, nama_member: '', diskon_persen: 0 }; // Reset global
 
         if (kodeMember.length > 0) {
             try {
-                const res = await fetch(`{{ route('api.member.validate') }}?kode_member=${encodeURIComponent(kodeMember)}`);
-                const data = await res.json();
+                const res = await fetch(`{{ route('api.member.validate') }}?kode_member=${encodeURIComponent(kodeMember)}`, {
+                    headers: { 'Accept': 'application/json' }
+                });
+
+                let data;
+                if (res.headers.get("content-type")?.includes("application/json")) {
+                    data = await res.json();
+                } else {
+                    throw new Error("Server tidak mengembalikan JSON");
+                }
 
                 if (res.ok && data.valid) {
+                    // Jika member valid
                     memberData = data;
-                    memberInfoPreview.innerText = `Member: ${data.nama_member}`;
+                    memberInfoPreview.innerText = `Member: ${data.nama_member} (Diskon: ${data.diskon_persen}%)`;
                     memberInfoPreview.style.display = 'block';
                     memberInfoPreview.classList.remove('text-red-600');
                     memberInfoPreview.classList.add('text-green-600');
-                    namaPenyewaInput.value = data.nama_member; // Auto-fill name
+
+                    namaPenyewaInput.value = data.nama_member;
                     namaPenyewaInput.readOnly = true;
 
-                    populatePaketsDropdown(true); // Member valid, tampilkan semua paket
+                    populatePaketsDropdown(true); // tampilkan semua paket
                 } else {
+                    // Jika bukan member
                     memberInfoPreview.innerText = data.message || 'Kode Member tidak valid.';
                     memberInfoPreview.style.display = 'block';
                     memberInfoPreview.classList.remove('text-green-600');
                     memberInfoPreview.classList.add('text-red-600');
-                    namaPenyewaInput.value = ''; // Clear name if invalid
+
+                    namaPenyewaInput.value = '';
                     namaPenyewaInput.readOnly = false;
-                    populatePaketsDropdown(false); // Bukan member valid, sembunyikan paket member
+
+                    populatePaketsDropdown(false); // sembunyikan paket member
                 }
             } catch (error) {
                 console.error('Error validating member:', error);
@@ -578,17 +672,21 @@
                 memberInfoPreview.style.display = 'block';
                 memberInfoPreview.classList.remove('text-green-600');
                 memberInfoPreview.classList.add('text-red-600');
+
                 namaPenyewaInput.value = '';
                 namaPenyewaInput.readOnly = false;
+
                 populatePaketsDropdown(false);
             }
         } else {
+            // Input kosong
             memberInfoPreview.style.display = 'none';
             namaPenyewaInput.value = '';
             namaPenyewaInput.readOnly = false;
-            populatePaketsDropdown(false); // Kode member kosong, sembunyikan paket member
+
+            populatePaketsDropdown(false); // default: sembunyikan paket member
         }
-    }, 500));
+    }, 500)); // Debounce untuk mencegah terlalu banyak request
 
     getEl('paket_id_select').addEventListener('change', function() {
         const selectedPaketId = this.value;
@@ -596,7 +694,7 @@
         const isSepuasnyaCheckbox = getEl('is_sepuasnya');
         const durasiJamWrapper = getEl('durasi_jam_wrapper');
         const durasiJamInput = getEl('durasi_jam');
-        const paketDeskripsiPreview = getEl('paket_deskripsi_preview'); // Ini sudah ada
+        const paketDeskripsiPreview = getEl('paket_deskripsi_preview');
 
         if (selectedPaketId) {
             const selectedPaket = allAvailablePakets.find(p => p.id == selectedPaketId);
@@ -618,32 +716,19 @@
                 isSepuasnyaCheckbox.disabled = true;
                 durasiJamInput.disabled = true;
 
-                let descHtml = []; // Ubah menjadi array untuk HTML
-                if (isiPaket.harga_paket) descHtml.push(`<strong>Harga:</strong> ${fmtRp(isiPaket.harga_paket)}`);
+                let desc = [];
+                if (isiPaket.harga_paket) desc.push(`Harga: ${fmtRp(isiPaket.harga_paket)}`);
                 if (isiPaket.durasi_jam !== undefined) {
-                    if (isiPaket.durasi_jam > 0) descHtml.push(`<strong> Durasi:</strong> ${fmtDur(isiPaket.durasi_jam)}`);
-                    else descHtml.push(`<strong>Durasi:</strong> Main Sepuasnya`);
+                    if (isiPaket.durasi_jam > 0) desc.push(`Durasi: ${fmtDur(isiPaket.durasi_jam)}`);
+                    else desc.push(`Durasi: Main Sepuasnya`);
                 }
+                if (isiPaket.services && isiPaket.services.length > 0) desc.push(`Service: ${isiPaket.services.length} item`);
+                if (isiPaket.deskripsi_tambahan) desc.push(isiPaket.deskripsi_tambahan);
                 
-                // --- Bagian baru untuk detail service ---
-                if (isiPaket.services && isiPaket.services.length > 0) {
-                    let serviceListHtml = '<p class="mt-2 mb-1"><strong>Termasuk Layanan:</strong></p><ul class="list-disc list-inside ml-4">';
-                    isiPaket.services.forEach(s => {
-                        serviceListHtml += `<li>${s.nama} (${s.jumlah}x) - ${fmtRp(s.subtotal)}</li>`;
-                    });
-                    serviceListHtml += '</ul>';
-                    descHtml.push(serviceListHtml);
-                } else {
-                    descHtml.push('<p class="mt-2">Tidak ada layanan tambahan dalam paket ini.</p>');
-                }
-                // --- Akhir bagian baru ---
-
-                if (isiPaket.deskripsi_tambahan) descHtml.push(`<p class="mt-2"><strong>Deskripsi:</strong> ${isiPaket.deskripsi_tambahan}</p>`);
-                
-                paketDeskripsiPreview.innerHTML = descHtml.join(''); // Menggunakan innerHTML
+                paketDeskripsiPreview.innerText = desc.join(' | ');
                 paketDeskripsiPreview.style.display = 'block';
 
-                getEl('formPesan').action = '{{ route('pemandu.pesanPaket') }}';
+                getEl('formPesan').action = '{{ route('kasir.pesanPaket') }}';
 
             }
         } else {
@@ -656,9 +741,8 @@
             durasiJamInput.required = true;
 
             paketDeskripsiPreview.style.display = 'none';
-            paketDeskripsiPreview.innerHTML = ''; // Pastikan juga mengosongkan konten
 
-            getEl('formPesan').action = '{{ route('pemandu.pesanDurasi') }}';
+            getEl('formPesan').action = '{{ route('kasir.pesanDurasi') }}';
         }
     });
 
@@ -673,49 +757,12 @@
             durasiInput.removeAttribute('required');
             durasiInput.value = '';
             paketSelect.style.display = 'none'; // Hide package field when "Main Sepuasnya" is checked
-            getEl('formPesan').action = '{{ route('pemandu.pesanSepuasnya') }}';
+            getEl('formPesan').action = '{{ route('kasir.pesanSepuasnya') }}';
         } else {
             durasiWrapper.style.display = 'block';
             durasiInput.setAttribute('required', 'required');
             paketSelect.style.display = 'block'; // Show package field when unchecked
-            getEl('formPesan').action = '{{ route('pemandu.pesanDurasi') }}';
-            populatePaketsDropdown(memberData.valid); // Re-populate based on member status
-        }
-    });
-
-    getEl('formPesan').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const form = e.target;
-        const submitBtn = form.querySelector('button[type="submit"]');
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memproses...';
-
-        try {
-            const formData = new FormData(form);
-            const res = await fetch(form.action, {
-                method: 'POST',
-                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                body: formData
-            });
-            const data = await res.json();
-
-            if (data.success) {
-                Swal.fire('Berhasil!', data.message, 'success');
-                closeModal();
-                fetchAndRenderMejas();
-            } else {
-                let errorMessage = data.message || 'Terjadi kesalahan.';
-                if (data.errors) {
-                    errorMessage += '<br>' + Object.values(data.errors).map(err => err.join(', ')).join('<br>');
-                }
-                Swal.fire('Gagal!', errorMessage, 'error');
-            }
-        } catch (error) {
-            console.error('Error submitting form:', error);
-            Swal.fire('Error!', 'Terjadi kesalahan jaringan atau server.', 'error');
-        } finally {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = 'Mulai';
+            getEl('formPesan').action = '{{ route('kasir.pesanDurasi') }}';
         }
     });
 
@@ -723,9 +770,8 @@
         e.preventDefault(); const pId = getEl('add_duration_penyewaan_id').value; const addDur = getEl('additional_durasi_jam').value;
         const submitBtn = e.target.querySelector('button[type="submit"]'); submitBtn.disabled = true; submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menambah...';
         try {
-            const res = await fetch(`{{ url('/pemandu/penyewaan/') }}/${pId}/add-duration`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' }, body: JSON.stringify({ additional_durasi_jam: addDur }) });
-            const data = await res.json();
-            if (data.success) { Swal.fire('Berhasil!', data.message, 'success'); closeAddDurationModal(); fetchAndRenderMejas(); }
+            const res = await fetch(`{{ url('/kasir/penyewaan/') }}/${pId}/add-duration`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' }, body: JSON.stringify({ additional_durasi_jam: addDur }) });
+            const data = await res.json(); if (res.ok) { Swal.fire('Berhasil!', data.message, 'success'); closeAddDurationModal(); fetchAndRenderMejas(); }
             else { Swal.fire('Gagal!', data.message || 'Terjadi kesalahan.', 'error'); }
         } catch (error) { Swal.fire('Error!', 'Terjadi kesalahan jaringan atau server saat menambah durasi.', 'error'); console.error('Error adding duration:', error); }
         finally { submitBtn.disabled = false; submitBtn.innerHTML = 'Tambah Durasi'; }
@@ -756,21 +802,114 @@
 
         const submitBtn = e.target.querySelector('button[type="submit"]'); submitBtn.disabled = true; submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menambah...';
         try {
-            const res = await fetch(`{{ url('/pemandu/penyewaan/') }}/${pId}/add-service`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' }, body: JSON.stringify({ services: selSrv }) });
+            const res = await fetch(`{{ url('/kasir/penyewaan/') }}/${pId}/add-service`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' }, body: JSON.stringify({ services: selSrv }) });
             const data = await res.json();
-            if (data.success) { Swal.fire('Berhasil!', data.message, 'success'); closeAddServiceModal(); fetchAndRenderMejas(); }
+            if (res.ok) { Swal.fire('Berhasil!', data.message, 'success'); closeAddServiceModal(); fetchAndRenderMejas(); }
             else { Swal.fire('Gagal!', data.message || 'Terjadi kesalahan.', 'error'); }
         } catch (error) { Swal.fire('Error!', 'Terjadi kesalahan jaringan atau server saat menambah service.', 'error'); console.error('Error adding service:', error); }
         finally { submitBtn.disabled = false; submitBtn.innerHTML = 'Tambah Service'; }
     });
 
+    getEl('formPembayaran').addEventListener('submit', async (e) => {
+        e.preventDefault(); const pId = getEl('payment_penyewaan_id').value; const kupon = getEl('kode_kupon').value;
+        const submitBtn = e.target.querySelector('button[type="submit"]'); submitBtn.disabled = true; submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memproses...';
+        try {
+            const res = await fetch(`{{ url('/kasir/penyewaan/') }}/${pId}/bayar`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' }, body: JSON.stringify({ kode_kupon: kupon }) });
+            const data = await res.json();
+            if (res.ok) {
+                Swal.fire('Berhasil!', data.message + ' Total bayar: ' + fmtRp(data.total_bayar), 'success'); closePaymentModal();
+                if (countdownIntervals[pId]) { clearInterval(countdownIntervals[pId]); delete countdownIntervals[pId]; }
+                fetchAndRenderMejas();
+            } else { Swal.fire('Gagal!', data.message || 'Terjadi kesalahan.', 'error'); console.error('Pembayaran gagal:', data); }
+        } catch (error) { Swal.fire('Error!', 'Terjadi kesalahan jaringan atau server saat memproses pembayaran.', 'error'); console.error('Error submitting payment:', error); }
+        finally { submitBtn.disabled = false; submitBtn.innerHTML = 'Bayar Sekarang'; }
+    });
+
+    const handleQrisPayment = async () => {
+        const penyewaanId = getEl('payment_penyewaan_id').value;
+        const kuponCode = getEl('kode_kupon').value;
+        const qrisButton = getEl('btn-pay-qris');
+
+        qrisButton.disabled = true;
+        qrisButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memproses QRIS...';
+
+        try {
+            const res = await fetch(`{{ url('/kasir/penyewaan/') }}/${penyewaanId}/bayar`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    kode_kupon: kuponCode,
+                    is_qris: true
+                })
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                Swal.fire({ icon: 'success', title: 'Pembayaran QRIS Berhasil!', text: data.message + ' Total bayar: ' + fmtRp(data.total_bayar), confirmButtonText: 'OK' });
+                closePaymentModal();
+                if (countdownIntervals[penyewaanId]) { clearInterval(countdownIntervals[penyewaanId]); delete countdownIntervals[penyewaanId]; }
+                fetchAndRenderMejas();
+            } else {
+                Swal.fire({ icon: 'error', title: 'Pembayaran QRIS Gagal!', text: data.message || 'Terjadi kesalahan saat memproses pembayaran QRIS.', confirmButtonText: 'OK' });
+                console.error('Pembayaran QRIS gagal:', data);
+            }
+        } catch (error) {
+            Swal.fire({ icon: 'error', title: 'Terjadi Kesalahan Jaringan!', text: 'Terjadi kesalahan jaringan atau server saat memproses pembayaran QRIS.', confirmButtonText: 'OK' });
+            console.error('Error submitting QRIS payment:', error);
+        } finally {
+            qrisButton.disabled = false;
+            qrisButton.innerHTML = 'Bayar dengan QRIS';
+        }
+    };
+
+    const confirmDeletePenyewaan = async (penyewaanId, mejaNama) => {
+        if (userRole !== 'admin') {
+            Swal.fire({ icon: 'error', title: 'Akses Ditolak!', text: 'Penghapusan meja hanya bisa dilakukan oleh Supervisor.', confirmButtonText: 'OK' });
+            return;
+        }
+
+        Swal.fire({
+            title: 'Yakin menghapus penyewaan?',
+            text: `Anda akan menghapus penyewaan untuk meja "${mejaNama}". Tindakan ini tidak dapat dibatalkan dan layanan yang digunakan akan dikembalikan stoknya.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#DC2626',
+            cancelButtonColor: '#6B7280',
+            confirmButtonText: 'Ya, Hapus!',
+            cancelButtonText: 'Tidak'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                performDeletePenyewaan(penyewaanId);
+            }
+        });
+    };
+
+    const performDeletePenyewaan = async (penyewaanId) => {
+        try {
+            const res = await fetch(`{{ url('/kasir/penyewaan/') }}/${penyewaanId}/delete`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+            });
+            const data = await res.json();
+            if (res.ok) {
+                Swal.fire('Dihapus!', data.message, 'success');
+                if (countdownIntervals[penyewaanId]) { clearInterval(countdownIntervals[penyewaanId]); delete countdownIntervals[penyewaanId]; }
+                fetchAndRenderMejas();
+            } else { Swal.fire('Gagal!', data.message || 'Terjadi kesalahan saat menghapus.', 'error'); }
+        } catch (error) { console.error('Error deleting penyewaan:', error); Swal.fire('Error!', 'Terjadi kesalahan jaringan atau server.', 'error'); }
+    };
+
     document.addEventListener('DOMContentLoaded', () => {
-        getEl('formPesan').action = '{{ route('pemandu.pesanDurasi') }}';
-        populatePaketsDropdown(false); // Initial load, assume not member
+        getEl('formPesan').action = '{{ route('kasir.pesanDurasi') }}';
+        populatePaketsDropdown(); // Initial populate
         fetchAndRenderMejas();
         setInterval(fetchAndRenderMejas, 5000);
     });
-      let activeCardId = null;
+    let activeCardId = null;
 
     function toggleDetail(mejaId) {
         // Ambil elemen detail

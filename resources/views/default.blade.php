@@ -74,7 +74,7 @@
         <!-- Logo + Close -->
         <div class="flex justify-between items-center px-2 py-4">
             <div class="text-white text-2xl font-bold tracking-wide">
-                  <i class="mdi mdi-billiards text-2xl"></i> Billiard-APP
+                <i class="fa-solid fa-pool-8-ball mr-2"></i> Billiard-APP
             </div>
             <!-- Close SELALU ada (mobile + tablet) -->
             <button type="button" data-drawer-hide="drawer-sidebar" aria-controls="drawer-sidebar"
@@ -96,7 +96,7 @@
                     switch (Auth::user()->role) {
                         case 'admin': $homeRoute = route('dashboard.kasir'); break;
                         case 'bos': $homeRoute = route('dashboard.bos'); break;
-                        case 'supervisor': $homeRoute = route('dashboard.supervisor'); break;
+                        case 'supervisor': $homeRoute = route('dashboard.kasir'); break;
                         case 'kasir': $homeRoute = route('dashboard.kasir'); break;
                         default: $homeRoute = route('login');
                     }
